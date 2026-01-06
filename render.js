@@ -4,9 +4,9 @@ import { Vector2 } from "three"
 import RenderPixelatedPass from "./RenderPixelatedPass.js"
 import PixelatePass from "./PixelatePass.js"
 
-export function createPixelRenderer(renderer, scene, camera) {
+export function createPixelRenderer(renderer, scene, camera, pixelationLevel = 6) {
     let screenResolution = new Vector2(window.innerWidth, window.innerHeight)
-    let renderResolution = screenResolution.clone().divideScalar(6)
+    let renderResolution = screenResolution.clone().divideScalar(pixelationLevel)
     renderResolution.x |= 0
     renderResolution.y |= 0
 

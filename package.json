@@ -5,13 +5,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node server.js"
   },
   "dependencies": {
-    "three": "^0.131.3"
+    "three": "^0.131.3",
+    "socket.io": "^4.7.2",
+    "socket.io-client": "^4.7.2"
   },
   "devDependencies": {
+    "physijs": "^1.0.4",
     "vite": "^5.0.0"
   }
 }
-

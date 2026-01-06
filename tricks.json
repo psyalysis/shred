@@ -1,0 +1,41 @@
+{
+    "Ollie": [0, 0, 0],
+
+    "Kickflip": [1, 0, 0],
+    "Heelflip": [-1, 0, 0],
+
+    "Varial Kickflip": [1, 0, 1],
+    "Varial Heelflip": [-1, 0, -1],
+    "Hardflip": [1, 0, -1],
+    "Inward Heelflip": [-1, 0, 1],
+
+    "Backside Kickflip": [1, 1, 0],
+    "Backside Heelflip": [-1, 1, 0],
+
+    "Frontside Kickflip": [1, -1, 0],
+    "Frontside Heelflip": [-1, -1, 0],
+
+    "Tre Flip": [1, 0, 2],
+    "Laser Flip": [-1, 0, -2],
+    "360 Hardflip": [1, 0, 2],
+    "360 Inward Heelflip": [-1, 0, -2],
+
+    "Backside Bigspin": [0, 1, 1],
+    "Frontside Bigspin": [0, -1, -1],
+
+    "Double Kickflip": [2, 0, 0],
+    "Double Heelflip": [-2, 0, 0],
+
+    "360 BS Shuvit": [0, 0, 2],
+    "360 FS Shuvit": [0, 0, -2],
+    "BS Shuvit": [0, 0, 1],
+    "FS Shuvit": [0, 0, -1],
+
+    "Frontside 180": [0, -1, 0],
+    "Backside 180": [0, 1, 0],
+    "Frontside 360": [0, -2, 0],
+    "Backside 360": [0, 2, 0],
+
+    "Frontside 540": [0, -3, 0],
+    "Backside 540": [0, 3, 0]
+}
