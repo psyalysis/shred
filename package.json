@@ -5,13 +5,21 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node server.js",
+    "start": "node server.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop shred",
+    "pm2:restart": "pm2 restart shred",
+    "pm2:logs": "pm2 logs shred"
   },
   "dependencies": {
-    "three": "^0.131.3"
+    "three": "^0.131.3",
+    "socket.io": "^4.7.2",
+    "socket.io-client": "^4.7.2"
   },
   "devDependencies": {
+    "physijs": "^1.0.4",
     "vite": "^5.0.0"
   }
 }
-
