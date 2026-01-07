@@ -35,6 +35,11 @@ function animate() {
     if (sceneObjects.composer) {
         sceneObjects.composer.render()
     }
+    
+    // Render name labels
+    if (sceneObjects.labelRenderer && sceneObjects.labelScene && sceneObjects.camera) {
+        sceneObjects.labelRenderer.render(sceneObjects.labelScene, sceneObjects.camera)
+    }
 }
 
 function updatePhysicsTimestep() {

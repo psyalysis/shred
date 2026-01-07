@@ -13,12 +13,16 @@ export const sceneObjects = {
     railMesh: null,
     railMaterials: [],  // Store rail materials for glow effect
     manualPad: null,
-    kickerRamp: null
+    kickerRamp: null,
+    labelRenderer: null,  // CSS2DRenderer for name labels
+    labelScene: null  // Scene for name labels
 }
 
 // Board state
+// Spawn position (corner of map)
+export const SPAWN_POSITION = { x: -10, y: 0.5 + 0.07, z: -10 }  // Corner spawn, y = FLOOR_Y + BOARD_HALF_HEIGHT
 export let boardTransform = {
-    position: { x: 0, y: 0, z: 0 },
+    position: { x: SPAWN_POSITION.x, y: SPAWN_POSITION.y, z: SPAWN_POSITION.z },
     rotation: { x: 0, y: 0, z: 0 }
 }
 // Target rotations for visual updates (updated by physics, applied to mesh at BOARD_REFRESH_RATE)
@@ -125,6 +129,9 @@ export const room = {
     players: [], // Array of { id, name? }
     maxPlayers: 4
 }
+
+// Player display name
+export let displayName = ''
 
 // Trick combo tracking
 export const trickCombo = {

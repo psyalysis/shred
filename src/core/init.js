@@ -2,6 +2,7 @@ import * as THREE from "three"
 import { Vector2 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
+import { CSS2DRenderer, CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js"
 import { createPixelRenderer, updatePixelRenderer, recreatePixelRenderer, setRendererReferences } from "../systems/render.js"
 import { initWindSound } from "../systems/sound.js"
 import { PIXELATION_LEVEL, FLOOR_Y, SFX_VOLUME, MANUAL_BALANCE_BAR_WIDTH, MANUAL_BALANCE_BAR_HEIGHT, MANUAL_BALANCE_LINE_WIDTH, FLOOR_COLOR } from "../config/constants.js"
@@ -212,11 +213,44 @@ function initCamera() {
     setRendererReferences(state.sceneObjects.renderer, state.sceneObjects.scene, state.sceneObjects.camera)
     
     state.sceneObjects.composer = createPixelRenderer(state.sceneObjects.renderer, state.sceneObjects.scene, state.sceneObjects.camera, PIXELATION_LEVEL)
+    
+    // Initialize CSS2D renderer for name labels
+    state.sceneObjects.labelRenderer = new CSS2DRenderer()
+    state.sceneObjects.labelRenderer.setSize(window.innerWidth, window.innerHeight)
+    state.sceneObjects.labelRenderer.domElement.style.position = 'fixed'
+    state.sceneObjects.labelRenderer.domElement.style.top = '0'
+    state.sceneObjects.labelRenderer.domElement.style.left = '0'
+    state.sceneObjects.labelRenderer.domElement.style.pointerEvents = 'none'
+    state.sceneObjects.labelRenderer.domElement.style.zIndex = '1000'
+    document.body.appendChild(state.sceneObjects.labelRenderer.domElement)
+    
+    state.sceneObjects.labelScene = new THREE.Scene()
+}
+
+/**
+ * Create name label for local player
+ */
+function createLocalPlayerNameLabel(CSS2DObject) {
+    const div = document.createElement('div')
+    div.className = 'player-name-label'
+    div.textContent = state.displayName || ''
+    div.style.cssText = `
+        color: #fff;
+        font-family: 'Ari', monospace;
+        font-size: 16px;
+        font-weight: bold;
+        text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+        white-space: nowrap;
+        pointer-events: none;
+        user-select: none;
+        text-align: center;
+    `
+    return new CSS2DObject(div)
 }
 
 function initLights() {
     // White ambient light
-    state.sceneObjects.scene.add(new THREE.AmbientLight(0xffffff, 1.2))
+    state.sceneObjects.scene.add(new THREE.AmbientLight(0xffffff, 1.3))
     
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7)
     directionalLight.position.set(40, 100, 200)
@@ -257,7 +291,7 @@ function createCheckerTexture(size = 16, checkSize = 8) {
 }
 
 function initFloor() {
-    const floorGeometry = new THREE.PlaneGeometry(10, 10)
+    const floorGeometry = new THREE.PlaneGeometry(30, 30)
     const checkerTexture = createCheckerTexture(256, 8)
     const floorMaterial = new THREE.MeshPhongMaterial({ 
         color: FLOOR_COLOR,
@@ -275,7 +309,7 @@ function initBoard() {
     const loader = new GLTFLoader()
     loader.load(
         '/assets/skateboard.glb',
-        (gltf) => {
+        async (gltf) => {
             state.sceneObjects.boardMesh = gltf.scene
             
             // Calculate bounding box to scale model to match original board size
@@ -310,7 +344,22 @@ function initBoard() {
                 }
             })
             
+            // Set initial spawn position (corner of map)
+            state.sceneObjects.boardMesh.position.set(
+                state.SPAWN_POSITION.x,
+                state.SPAWN_POSITION.y,
+                state.SPAWN_POSITION.z
+            )
+            
             state.sceneObjects.scene.add(state.sceneObjects.boardMesh)
+            
+            // Create name label for local player
+            const { CSS2DObject } = await import('three/examples/jsm/renderers/CSS2DRenderer.js')
+            const nameLabel = createLocalPlayerNameLabel(CSS2DObject)
+            nameLabel.position.set(0, 0.5, 0)  // Position above board
+            state.sceneObjects.boardMesh.add(nameLabel)
+            state.ui.localPlayerNameLabel = nameLabel
+            
             // Initialize target rotation to match initial board rotation
             state.boardTargetRotation.x = state.sceneObjects.boardMesh.rotation.x
             state.boardTargetRotation.y = state.sceneObjects.boardMesh.rotation.y
@@ -386,9 +435,9 @@ function initRail() {
 
 function initManualPad() {
     // Create a flat raised platform for manual tricks
-    const padWidth = 2
-    const padLength = 1.5
-    const padHeight = 0.25
+    const padWidth = 5
+    const padLength = 3
+    const padHeight = 0.3
     const padElevation = 0  // Height above floor
     
     const padGeometry = new THREE.BoxGeometry(padWidth, padHeight, padLength)
@@ -396,7 +445,7 @@ function initManualPad() {
     const manualPad = new THREE.Mesh(padGeometry, padMaterial)
     
     // Position pad to the side of the map
-    manualPad.position.set(-3, FLOOR_Y + padElevation + padHeight / 2, 2)
+    manualPad.position.set(-4, FLOOR_Y + padElevation + padHeight / 2, 4)
     
     // Rotate pad by -30 degrees on Y axis
     manualPad.rotation.y = -Math.PI / 6  // -30 degrees
@@ -601,6 +650,10 @@ async function loadTricksData() {
 }
 
 function onWindowResize() {
+    // Update label renderer size
+    if (state.sceneObjects.labelRenderer) {
+        state.sceneObjects.labelRenderer.setSize(window.innerWidth, window.innerHeight)
+    }
     const screenResolution = new Vector2(window.innerWidth, window.innerHeight)
     const aspectRatio = screenResolution.x / screenResolution.y
 

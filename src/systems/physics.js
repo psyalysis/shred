@@ -88,6 +88,8 @@ export function updatePhysics() {
     handleMovement()
     handleMomentum()
     handleCollision()
+    handleFallDetection()
+    handleBoundaryTeleport()
     handleRotationInput()
     handleManualSystem()
     // Apply alignment torque after manual system (so manual system can set manual pitch first)
@@ -412,8 +414,8 @@ function checkManualPadCollision(boardPos) {
     
     const pad = state.sceneObjects.manualPad
     const padPos = pad.position
-    const padWidth = 2
-    const padLength = 1.5
+    const padWidth = 5
+    const padLength = 3
     const padTopY = padPos.y + pad.geometry.parameters.height / 2
     const padRotationY = pad.rotation.y
     
@@ -1172,6 +1174,92 @@ function handleSmoothSnapping() {
             state.boardTargetRotation.z += step
             state.snap.previousSnapRotationZ = state.boardTargetRotation.z
         }
+    }
+}
+
+/**
+ * Check if player has fallen off the map and teleport back to spawn
+ */
+function handleFallDetection() {
+    if (!state.sceneObjects.boardMesh) return
+    
+    const FALL_THRESHOLD = -10  // Y position threshold for falling off map
+    
+    // Check if player has fallen below threshold
+    if (state.sceneObjects.boardMesh.position.y < FALL_THRESHOLD) {
+        // Teleport back to spawn position
+        state.sceneObjects.boardMesh.position.set(
+            state.SPAWN_POSITION.x,
+            state.SPAWN_POSITION.y,
+            state.SPAWN_POSITION.z
+        )
+        
+        // Reset velocity to prevent falling immediately after respawn
+        state.boardVelocity.x = 0
+        state.boardVelocity.y = 0
+        state.boardVelocity.z = 0
+        
+        // Reset angular velocity
+        state.angularVelocity.x = 0
+        state.angularVelocity.z = 0
+        
+        // Reset rotation to default (flat on ground)
+        state.sceneObjects.boardMesh.rotation.x = Math.PI / 2
+        state.sceneObjects.boardMesh.rotation.y = 0
+        state.sceneObjects.boardMesh.rotation.z = 0
+        
+        // Update target rotation to match
+        state.boardTargetRotation.x = Math.PI / 2
+        state.boardTargetRotation.y = 0
+        state.boardTargetRotation.z = 0
+        
+        // Exit any active states
+        state.physics.isGrinding = false
+        state.physics.isInManual = false
+        state.physics.isOnFloor = true
+    }
+}
+
+/**
+ * Check if player is too far from center and teleport back to center
+ */
+function handleBoundaryTeleport() {
+    if (!state.sceneObjects.boardMesh) return
+    
+    const MAX_DISTANCE = 25  // Maximum distance from center (0, 0, 0)
+    const CENTER_Y = FLOOR_Y + BOARD_HALF_HEIGHT  // Center Y position (on floor)
+    
+    const pos = state.sceneObjects.boardMesh.position
+    const distanceFromCenter = Math.sqrt(pos.x * pos.x + pos.z * pos.z)  // Only check X and Z distance
+    
+    // Check if player is further than MAX_DISTANCE from center
+    if (distanceFromCenter > MAX_DISTANCE) {
+        // Teleport back to center of map
+        state.sceneObjects.boardMesh.position.set(0, CENTER_Y, 0)
+        
+        // Reset velocity to prevent immediate re-teleportation
+        state.boardVelocity.x = 0
+        state.boardVelocity.y = 0
+        state.boardVelocity.z = 0
+        
+        // Reset angular velocity
+        state.angularVelocity.x = 0
+        state.angularVelocity.z = 0
+        
+        // Reset rotation to default (flat on ground)
+        state.sceneObjects.boardMesh.rotation.x = Math.PI / 2
+        state.sceneObjects.boardMesh.rotation.y = 0
+        state.sceneObjects.boardMesh.rotation.z = 0
+        
+        // Update target rotation to match
+        state.boardTargetRotation.x = Math.PI / 2
+        state.boardTargetRotation.y = 0
+        state.boardTargetRotation.z = 0
+        
+        // Exit any active states
+        state.physics.isGrinding = false
+        state.physics.isInManual = false
+        state.physics.isOnFloor = true
     }
 }
 

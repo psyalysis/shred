@@ -20,7 +20,7 @@ export const BOARD_HALF_LENGTH = 0.3  // Approximate half-length of board (for r
 export const FLOOR_COLOR = 0x202020  // Darker grey
 
 // Movement constants
-export const FORWARD_SPEED = 0.06  // Halved for 60 FPS
+export const FORWARD_SPEED = 0.08  // Halved for 60 FPS
 export const FRICTION = 0.92  // Higher friction for quick deceleration
 export const MIN_VELOCITY = 0.0001
 
@@ -40,7 +40,7 @@ export const SNAP_SPEED = 0.35  // Speed of smooth snapping rotation
 
 // Graphics constants
 export const PIXELATION_LEVEL = 2  // Higher value = more pixelated (lower resolution)
-export const BOARD_REFRESH_RATE = 20  // Visual update rate for board rotation (FPS, does not affect physics)
+export const BOARD_REFRESH_RATE = 60  // Visual update rate for board rotation (FPS, does not affect physics)
 
 // Audio constants
 export const SFX_VOLUME = 0.1  // Volume for all sound effects (0.0 to 1.0)
@@ -111,7 +111,7 @@ export const COMBO_ANIMATION_DURATION = 200  // Animation duration for combo upd
 export const SHOW_TRICK_NAME_FEEDBACK = false  // Toggle trick name display on landing
 
 // Manual system constants
-export const MANUAL_DIP_SPEED = 0.0005  // Speed of board dipping when scrolling (radians per scroll unit)
+export const MANUAL_DIP_SPEED = 0.00075  // Speed of board dipping when scrolling (radians per scroll unit)
 export const MANUAL_DIP_SMOOTHING = 0.15  // Smoothing factor for dip interpolation (0-1, lower = smoother)
 export const MANUAL_MIN_DIP = -0.4  // Minimum board dip angle (nose manual)
 export const MANUAL_MAX_DIP = 0.4  // Maximum board dip angle (tail manual)

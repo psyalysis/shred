@@ -270,7 +270,8 @@ io.on('connection', (socket) => {
         room.players.set(socket.id, {
             position: { x: 0, y: 0, z: 0 },
             rotation: { x: 0, y: 0, z: 0 },
-            velocity: { x: 0, y: 0, z: 0 }
+            velocity: { x: 0, y: 0, z: 0 },
+            displayName: ''
         })
         socket.join(code)
         
@@ -291,7 +292,8 @@ io.on('connection', (socket) => {
                 .map(([id, data]) => ({
                     id,
                     position: data.position,
-                    rotation: data.rotation
+                    rotation: data.rotation,
+                    displayName: data.displayName || ''
                 }))
             
             socket.emit('currentPlayers', currentPlayers)
@@ -301,7 +303,8 @@ io.on('connection', (socket) => {
             socket.to(code).emit('playerJoined', {
                 id: socket.id,
                 position: newPlayerData.position,
-                rotation: newPlayerData.rotation
+                rotation: newPlayerData.rotation,
+                displayName: newPlayerData.displayName || ''
             })
         }
         
@@ -340,7 +343,8 @@ io.on('connection', (socket) => {
                 const currentPlayers = Array.from(room.players.entries()).map(([id, data]) => ({
                     id,
                     position: data.position,
-                    rotation: data.rotation
+                    rotation: data.rotation,
+                    displayName: data.displayName || ''
                 }))
                 
                 io.to(code).emit('gameStarted')
@@ -352,7 +356,8 @@ io.on('connection', (socket) => {
                         socket.to(code).emit('playerJoined', {
                             id: player.id,
                             position: player.position,
-                            rotation: player.rotation
+                            rotation: player.rotation,
+                            displayName: player.displayName || ''
                         })
                     }
                 })
@@ -406,6 +411,23 @@ io.on('connection', (socket) => {
         }
     })
     
+    // Handle player name updates (can happen anytime, even before game starts)
+    socket.on('playerNameUpdate', (data) => {
+        for (const [code, room] of rooms.entries()) {
+            if (room.players.has(socket.id)) {
+                const playerData = room.players.get(socket.id)
+                playerData.displayName = data.displayName || ''
+                
+                // Broadcast name update to all other players in room immediately
+                socket.to(code).emit('playerNameUpdate', {
+                    id: socket.id,
+                    displayName: data.displayName || ''
+                })
+                return
+            }
+        }
+    })
+    
     // Handle player updates (only when game is started)
     socket.on('playerUpdate', (data) => {
         for (const [code, room] of rooms.entries()) {
@@ -414,6 +436,9 @@ io.on('connection', (socket) => {
                 playerData.position = data.position
                 playerData.rotation = data.rotation
                 playerData.velocity = data.velocity || { x: 0, y: 0, z: 0 }
+                if (data.displayName !== undefined) {
+                    playerData.displayName = data.displayName || 'Guest'
+                }
                 
                 // Broadcast to all other players in room
                 socket.to(code).emit('playerUpdate', {

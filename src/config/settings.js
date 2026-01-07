@@ -3,6 +3,7 @@ import * as THREE from "three"
 import { SFX_VOLUME, PIXELATION_LEVEL, MOUSE_STEERING_SENSITIVITY } from "./constants.js"
 import { updatePixelRenderer, updateBloomIntensity as updateBloomIntensityFromRender, recreatePixelRenderer } from "../systems/render.js"
 import { openMenu } from "../core/init.js"
+import { sendNameUpdate } from "../systems/network.js"
 
 // ============================================================================
 // SETTINGS MENU
@@ -21,7 +22,8 @@ let settings = {
     pixelationLevel: PIXELATION_LEVEL,
     mouseSensitivity: MOUSE_STEERING_SENSITIVITY,
     bloomIntensity: 1.0,  // Default to 100% (which equals 0.3 strength, 60% of original 0.5)
-    swapShuvFlip: false  // Swap A/D barrel roll with right-click shuv
+    swapShuvFlip: false,  // Swap A/D barrel roll with right-click shuv
+    displayName: ''  // Player display name for multiplayer
 }
 
 // Export current mouse sensitivity for use in physics
@@ -123,34 +125,57 @@ export function initSettingsMenu() {
         image-rendering: pixelated;
         image-rendering: -moz-crisp-edges;
         image-rendering: crisp-edges;
+        overflow: auto;
     `
     
     // Create menu panel
     const panel = document.createElement('div')
     panel.id = 'settings-panel'
-    panel.style.cssText = `
-        background: #404040;  // Dark grey
-        border: 4px solid #fff;
-        box-shadow: 
-            inset -4px -4px 0 #000,
-            inset 4px 4px 0 #666,
-            0 0 0 2px #000;
-        padding: 30px;
-        min-width: 500px;
-        max-width: 600px;
-        color: #fff;
-        position: relative;
-        transform: scale(0);
-        image-rendering: pixelated;
-        transform-origin: center center;
-    `
+    
+    // Function to update panel size based on window
+    function updatePanelSize() {
+        const maxWidth = Math.min(600, window.innerWidth - 40)
+        const maxHeight = window.innerHeight - 40
+        const minWidth = Math.min(400, window.innerWidth - 40)
+        
+        panel.style.cssText = `
+            background: #404040;
+            border: 4px solid #fff;
+            box-shadow: 
+                inset -4px -4px 0 #000,
+                inset 4px 4px 0 #666,
+                0 0 0 2px #000;
+            padding: 20px;
+            min-width: ${minWidth}px;
+            max-width: ${maxWidth}px;
+            max-height: ${maxHeight}px;
+            width: ${Math.min(600, window.innerWidth - 40)}px;
+            color: #fff;
+            position: relative;
+            transform: scale(0);
+            image-rendering: pixelated;
+            transform-origin: center center;
+            overflow-y: auto;
+            overflow-x: hidden;
+            margin: 20px;
+        `
+    }
+    
+    updatePanelSize()
+    
+    // Update panel size on window resize
+    window.addEventListener('resize', () => {
+        if (isOpen) {
+            updatePanelSize()
+        }
+    })
     
     // Title
     const title = document.createElement('h1')
     title.textContent = 'SETTINGS'
     title.style.cssText = `
-        margin: 0 0 30px 0;
-        font-size: 32px;
+        margin: 0 0 20px 0;
+        font-size: clamp(24px, 5vw, 32px);
         font-weight: bold;
         text-align: center;
         text-shadow: 3px 3px 0 #000;
@@ -162,6 +187,7 @@ export function initSettingsMenu() {
     createSoundSection(panel)
     createControlSection(panel)
     createGraphicsSection(panel)
+    createMultiplayerSection(panel)
     
     // Back button
     const closeBtn = createPixelButton('BACK', () => {
@@ -170,10 +196,10 @@ export function initSettingsMenu() {
         openMenu()
     })
     closeBtn.style.cssText += `
-        margin-top: 30px;
+        margin-top: 20px;
         width: 100%;
-        font-size: 20px;
-        padding: 15px;
+        font-size: clamp(16px, 3vw, 20px);
+        padding: 12px;
     `
     panel.appendChild(closeBtn)
     
@@ -210,8 +236,9 @@ function createSoundSection(parent) {
     volumeContainer.style.cssText = `
         display: flex;
         align-items: center;
-        gap: 15px;
-        margin-bottom: 20px;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
     `
     
     const volumeSlider = createPixelSlider(
@@ -235,7 +262,7 @@ function createSoundSection(parent) {
     volumeValue.style.cssText = `
         min-width: 50px;
         text-align: right;
-        font-size: 18px;
+        font-size: clamp(16px, 3vw, 18px);
         font-weight: bold;
     `
     volumeContainer.appendChild(volumeValue)
@@ -256,8 +283,9 @@ function createControlSection(parent) {
     sensitivityContainer.style.cssText = `
         display: flex;
         align-items: center;
-        gap: 15px;
-        margin-bottom: 20px;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
     `
     
     const sensitivitySlider = createPixelSlider(
@@ -282,7 +310,7 @@ function createControlSection(parent) {
     sensitivityValue.style.cssText = `
         min-width: 50px;
         text-align: right;
-        font-size: 18px;
+        font-size: clamp(16px, 3vw, 18px);
         font-weight: bold;
     `
     sensitivityContainer.appendChild(sensitivityValue)
@@ -293,8 +321,9 @@ function createControlSection(parent) {
     swapContainer.style.cssText = `
         display: flex;
         align-items: center;
-        gap: 15px;
-        margin-bottom: 20px;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
     `
     
     const swapCheckbox = createPixelCheckbox(
@@ -349,8 +378,9 @@ function createGraphicsSection(parent) {
     pixelContainer.style.cssText = `
         display: flex;
         align-items: center;
-        gap: 15px;
-        margin-bottom: 20px;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
     `
     
     const pixelSlider = createPixelSlider(
@@ -382,7 +412,7 @@ function createGraphicsSection(parent) {
     pixelValue.style.cssText = `
         min-width: 50px;
         text-align: right;
-        font-size: 18px;
+        font-size: clamp(16px, 3vw, 18px);
         font-weight: bold;
     `
     pixelContainer.appendChild(pixelValue)
@@ -396,8 +426,9 @@ function createGraphicsSection(parent) {
     bloomContainer.style.cssText = `
         display: flex;
         align-items: center;
-        gap: 15px;
-        margin-bottom: 20px;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
     `
     
     const bloomSlider = createPixelSlider(
@@ -422,11 +453,67 @@ function createGraphicsSection(parent) {
     bloomValue.style.cssText = `
         min-width: 50px;
         text-align: right;
-        font-size: 18px;
+        font-size: clamp(16px, 3vw, 18px);
         font-weight: bold;
     `
     bloomContainer.appendChild(bloomValue)
     section.appendChild(bloomContainer)
+}
+
+/**
+ * Create multiplayer settings section
+ */
+function createMultiplayerSection(parent) {
+    const section = createSection('MULTIPLAYER', parent)
+    
+    // Display Name
+    const nameLabel = createLabel('Display Name')
+    section.appendChild(nameLabel)
+    
+    const nameInput = document.createElement('input')
+    nameInput.type = 'text'
+    nameInput.value = settings.displayName || ''
+    nameInput.placeholder = 'Enter your name'
+    nameInput.maxLength = 20
+    nameInput.style.cssText = `
+        width: 100%;
+        padding: 10px;
+        font-size: clamp(14px, 3vw, 18px);
+        font-family: 'Ari', monospace;
+        background: #202020;
+        border: 3px solid #fff;
+        box-shadow:
+            inset -3px -3px 0 #000,
+            inset 3px 3px 0 #666;
+        color: #fff;
+        margin-bottom: 15px;
+        image-rendering: pixelated;
+        box-sizing: border-box;
+    `
+    
+    nameInput.addEventListener('input', (e) => {
+        settings.displayName = e.target.value.trim()
+        state.displayName = settings.displayName
+        saveSettings()
+        
+        // Update local player name label if it exists
+        if (state.ui.localPlayerNameLabel) {
+            state.ui.localPlayerNameLabel.element.textContent = state.displayName || ''
+        }
+        
+        // Immediately send name update to server so other players see it
+        sendNameUpdate(state.displayName)
+    })
+    
+    nameInput.addEventListener('keydown', (e) => {
+        // Prevent Enter from submitting/closing menu
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            nameInput.blur()
+        }
+    })
+    
+    section.appendChild(nameInput)
 }
 
 /**
@@ -436,16 +523,16 @@ function createSection(title, parent) {
     const section = document.createElement('div')
     section.className = 'settings-section'
     section.style.cssText = `
-        margin-bottom: 30px;
-        padding-bottom: 20px;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
         border-bottom: 2px solid #444;
     `
     
     const sectionTitle = document.createElement('h2')
     sectionTitle.textContent = title
     sectionTitle.style.cssText = `
-        margin: 0 0 20px 0;
-        font-size: 22px;
+        margin: 0 0 15px 0;
+        font-size: clamp(18px, 4vw, 22px);
         font-weight: bold;
         text-shadow: 2px 2px 0 #000;
         letter-spacing: 1px;
@@ -462,8 +549,8 @@ function createLabel(text) {
     const label = document.createElement('div')
     label.textContent = text
     label.style.cssText = `
-        font-size: 16px;
-        margin-bottom: 8px;
+        font-size: clamp(14px, 3vw, 16px);
+        margin-bottom: 6px;
         font-weight: bold;
     `
     return label

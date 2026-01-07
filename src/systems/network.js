@@ -2,6 +2,7 @@ import { io } from 'socket.io-client'
 import * as state from '../core/state.js'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
 import { shortestAngleDiff } from '../utils/math.js'
 import { error, info, warn } from '../utils/logger.js'
 import { emitSparksForOtherPlayer } from './particles.js'
@@ -22,7 +23,8 @@ import {
 
 let socket = null
 let isConnected = false
-const otherPlayers = new Map() // id -> { mesh, position, rotation, velocity, lastUpdateTime }
+const otherPlayers = new Map() // id -> { mesh, position, rotation, velocity, lastUpdateTime, nameLabel, displayName }
+let localPlayerNameLabel = null  // Name label for local player
 let lastUpdateTime = 0
 let reconnectAttempts = 0
 let reconnectTimeout = null
@@ -169,14 +171,14 @@ export function connect() {
             info(`Received ${players.length} current players`)
             players.forEach(player => {
                 if (player.id !== socket.id) {
-                    createOtherPlayer(player.id, player.position, player.rotation)
+                    createOtherPlayer(player.id, player.position, player.rotation, player.displayName)
                 }
             })
         })
         
         socket.on('playerJoined', (player) => {
             info(`Player joined: ${player.id}`)
-            createOtherPlayer(player.id, player.position, player.rotation)
+            createOtherPlayer(player.id, player.position, player.rotation, player.displayName)
         })
         
         socket.on('playerUpdate', (data) => {
@@ -186,8 +188,18 @@ export function connect() {
                 data.rotation, 
                 data.velocity,
                 data.isGrinding,
-                data.railGrindDirection
+                data.railGrindDirection,
+                data.displayName
             )
+        })
+        
+        socket.on('playerNameUpdate', (data) => {
+            // Update player name immediately when it changes
+            const player = otherPlayers.get(data.id)
+            if (player && player.nameLabel) {
+                player.displayName = data.displayName || ''
+                player.nameLabel.element.textContent = data.displayName || ''
+            }
         })
         
         socket.on('playerLeft', (playerId) => {
@@ -257,8 +269,16 @@ export function setRoomCallbacks(callbacks) {
     onRoomStateUpdate = callbacks.onRoomStateUpdate
 }
 
-function createOtherPlayer(id, position, rotation) {
-    if (otherPlayers.has(id)) return
+function createOtherPlayer(id, position, rotation, displayName) {
+    if (otherPlayers.has(id)) {
+        // Update display name if player already exists
+        const player = otherPlayers.get(id)
+        if (displayName !== undefined && player.nameLabel) {
+            player.displayName = displayName || ''
+            player.nameLabel.element.textContent = displayName || ''
+        }
+        return
+    }
     
     const loader = new GLTFLoader()
     loader.load(
@@ -295,6 +315,11 @@ function createOtherPlayer(id, position, rotation) {
             
             state.sceneObjects.scene.add(mesh)
             
+            // Create name label for other player
+            const nameLabel = createNameLabel('')
+            nameLabel.position.set(0, 0.5, 0)  // Position above board
+            mesh.add(nameLabel)
+            
             otherPlayers.set(id, {
                 mesh,
                 position: { ...position },
@@ -308,8 +333,15 @@ function createOtherPlayer(id, position, rotation) {
                 previousIsGrinding: false,
                 visualTiming: {
                     accumulatedTime: 0
-                }
+                },
+                nameLabel,
+                displayName: displayName || ''
             })
+            
+            // Set initial display name
+            if (displayName && nameLabel) {
+                nameLabel.element.textContent = displayName
+            }
         },
         undefined,
         (err) => {
@@ -318,10 +350,37 @@ function createOtherPlayer(id, position, rotation) {
     )
 }
 
-function updateOtherPlayer(id, position, rotation, velocity, isGrinding, railGrindDirection) {
+/**
+ * Create a name label element
+ */
+function createNameLabel(name) {
+    const div = document.createElement('div')
+    div.className = 'player-name-label'
+    div.textContent = name || ''
+    div.style.cssText = `
+        color: #fff;
+        font-family: 'Ari', monospace;
+        font-size: 16px;
+        font-weight: bold;
+        text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+        white-space: nowrap;
+        pointer-events: none;
+        user-select: none;
+        text-align: center;
+    `
+    return new CSS2DObject(div)
+}
+
+function updateOtherPlayer(id, position, rotation, velocity, isGrinding, railGrindDirection, displayName) {
     const player = otherPlayers.get(id)
     if (!player) return
     
+    // Update display name if provided
+    if (displayName !== undefined && player.nameLabel) {
+        player.displayName = displayName || ''
+        player.nameLabel.element.textContent = displayName || ''
+    }
+
     // Use velocity for better prediction
     const timeSinceUpdate = (performance.now() - (player.lastUpdateTime || performance.now())) / 1000
     const predictedPosition = {
@@ -438,11 +497,24 @@ export function updateNetwork(deltaTime) {
                     z: state.boardVelocity.z
                 },
                 isGrinding: state.physics.isGrinding,
-                railGrindDirection: state.physics.railGrindDirection
+                railGrindDirection: state.physics.railGrindDirection,
+                displayName: state.displayName || ''
             })
         }
         lastUpdateTime = now
     }
+}
+
+/**
+ * Send immediate name update to server
+ */
+export function sendNameUpdate(displayName) {
+    if (!socket || !isConnected) return
+    
+    // Send name update immediately, even if game hasn't started
+    socket.emit('playerNameUpdate', {
+        displayName: displayName || ''
+    })
 }
 
 export function disconnect() {
