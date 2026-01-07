@@ -434,12 +434,12 @@ function initKickerRamp() {
 
 function initAudio() {
     try {
-        state.audio.failAudio = new Audio('../../sfx/Death.mp3')
+        state.audio.failAudio = new Audio('/sfx/Death.mp3')
         state.audio.failAudio.volume = SFX_VOLUME
         
         // Load all pop sound effects (using arrays for now, can be converted to pools later)
         for (let i = 1; i <= 6; i++) {
-            const popSound = new Audio(`../../sfx/Pop_${i}.wav`)
+            const popSound = new Audio(`/sfx/Pop_${i}.wav`)
             popSound.volume = SFX_VOLUME
             popSound.preload = 'auto'
             state.audio.popSounds.push(popSound)
@@ -447,7 +447,7 @@ function initAudio() {
         
         // Load all land sound effects
         for (let i = 1; i <= 5; i++) {
-            const landSound = new Audio(`../../sfx/Land_${i}.wav`)
+            const landSound = new Audio(`/sfx/Land_${i}.wav`)
             landSound.volume = SFX_VOLUME
             landSound.preload = 'auto'
             state.audio.landSounds.push(landSound)
@@ -455,14 +455,14 @@ function initAudio() {
         
         // Load all catch sound effects
         for (let i = 1; i <= 3; i++) {
-            const catchSound = new Audio(`../../sfx/Catch_${i}.mp3`)
+            const catchSound = new Audio(`/sfx/Catch_${i}.mp3`)
             catchSound.volume = SFX_VOLUME
             catchSound.preload = 'auto'
             state.audio.catchSounds.push(catchSound)
         }
         
         // Load rail grinding sound
-        state.audio.railSound = new Audio('../../sfx/Rail.wav')
+        state.audio.railSound = new Audio('/sfx/Rail.wav')
         state.audio.railSound.volume = SFX_VOLUME
         state.audio.railSound.loop = true
         state.audio.railSound.preload = 'auto'
