@@ -7,11 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "node server.js",
-    "start": "node server.js",
-    "pm2:start": "pm2 start ecosystem.config.js",
-    "pm2:stop": "pm2 stop shred",
-    "pm2:restart": "pm2 restart shred",
-    "pm2:logs": "pm2 logs shred"
+    "start": "node server.js"
   },
   "dependencies": {
     "three": "^0.131.3",
