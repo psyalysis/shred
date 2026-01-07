@@ -34,10 +34,20 @@ const mimeTypes = {
 
 // Serve static files
 function serveStaticFile(req, res) {
-    let filePath = join(__dirname, 'dist', req.url === '/' ? 'index.html' : req.url)
+    // Parse URL to get pathname (remove query string and hash)
+    let urlPath = req.url.split('?')[0] // Remove query string
+    urlPath = urlPath.split('#')[0] // Remove hash
+    
+    // Normalize path
+    if (urlPath === '/') {
+        urlPath = '/index.html'
+    }
+    
+    let filePath = join(__dirname, 'dist', urlPath)
     
     // Security: prevent directory traversal
-    if (!filePath.startsWith(join(__dirname, 'dist'))) {
+    const distPath = join(__dirname, 'dist')
+    if (!filePath.startsWith(distPath)) {
         res.writeHead(403)
         res.end('Forbidden')
         return
@@ -45,17 +55,50 @@ function serveStaticFile(req, res) {
     
     // Check if file exists
     if (!existsSync(filePath)) {
-        // SPA fallback: serve index.html for all routes
-        filePath = join(__dirname, 'dist', 'index.html')
-        if (!existsSync(filePath)) {
-            res.writeHead(404)
-            res.end('File not found')
-            return
+        // Check if it's a directory
+        try {
+            const stats = statSync(filePath)
+            if (stats.isDirectory()) {
+                filePath = join(filePath, 'index.html')
+                if (!existsSync(filePath)) {
+                    res.writeHead(404)
+                    res.end('File not found')
+                    return
+                }
+            }
+        } catch (err) {
+            // File doesn't exist - check if it's an asset request
+            const ext = extname(urlPath).toLowerCase()
+            const isAssetRequest = ext && (ext !== '.html' || urlPath.startsWith('/assets/') || urlPath.endsWith('.json'))
+            
+            if (isAssetRequest) {
+                // Asset file not found - return 404
+                console.error(`Asset not found: ${urlPath}`)
+                res.writeHead(404, { 'Content-Type': 'text/plain' })
+                res.end('Asset not found')
+                return
+            }
+            
+            // SPA fallback: serve index.html for routes (not assets)
+            filePath = join(__dirname, 'dist', 'index.html')
+            if (!existsSync(filePath)) {
+                res.writeHead(404)
+                res.end('File not found')
+                return
+            }
         }
     }
     
-    // Check if it's a directory
-    const stats = statSync(filePath)
+    // Get file stats
+    let stats
+    try {
+        stats = statSync(filePath)
+    } catch (err) {
+        res.writeHead(404)
+        res.end('File not found')
+        return
+    }
+    
     if (stats.isDirectory()) {
         filePath = join(filePath, 'index.html')
         if (!existsSync(filePath)) {
@@ -63,6 +106,7 @@ function serveStaticFile(req, res) {
             res.end('File not found')
             return
         }
+        stats = statSync(filePath)
     }
     
     // Get file extension and set MIME type

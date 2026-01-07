@@ -262,7 +262,7 @@ function createOtherPlayer(id, position, rotation) {
     
     const loader = new GLTFLoader()
     loader.load(
-        './assets/skateboard.glb',
+        '/assets/skateboard.glb',
         (gltf) => {
             const mesh = gltf.scene.clone()
             

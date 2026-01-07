@@ -29,13 +29,13 @@ function initFonts() {
     style.textContent = `
         @font-face {
             font-family: 'Ari';
-            src: url('../../assets/ari-w9500.ttf') format('truetype');
+            src: url('/assets/ari-w9500.ttf') format('truetype');
             font-weight: normal;
             font-style: normal;
         }
         @font-face {
             font-family: 'Ari';
-            src: url('../../assets/ari-w9500-bold.ttf') format('truetype');
+            src: url('/assets/ari-w9500-bold.ttf') format('truetype');
             font-weight: bold;
             font-style: normal;
         }
@@ -274,7 +274,7 @@ function initFloor() {
 function initBoard() {
     const loader = new GLTFLoader()
     loader.load(
-        '../../assets/skateboard.glb',
+        '/assets/skateboard.glb',
         (gltf) => {
             state.sceneObjects.boardMesh = gltf.scene
             
@@ -327,7 +327,7 @@ function initBoard() {
 function initRail() {
     const loader = new GLTFLoader()
     loader.load(
-        '../../assets/rail.glb',
+        '/assets/rail.glb',
         (gltf) => {
             const railMesh = gltf.scene
             
@@ -592,7 +592,7 @@ function initManualBalanceUI() {
 
 async function loadTricksData() {
     try {
-        const response = await fetch('../../tricks.json')
+        const response = await fetch('/tricks.json')
         state.ui.tricksData = await response.json()
     } catch (err) {
         error('Error loading tricks.json:', err)

@@ -188,6 +188,13 @@ pm2 monit               # Monitor resources
 
 ## Troubleshooting
 
+**IMPORTANT:** If accessing your domain shows your router's login page instead of the game, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for detailed solutions.
+
+Common issues:
+- Router intercepting HTTPS (port 443) - disable router's HTTPS admin access
+- Port forwarding not configured correctly
+- Firewall blocking ports
+
 ### Server won't start
 - Check logs: `pm2 logs shred`
 - Verify Node.js version: `node --version` (should be 18+)
